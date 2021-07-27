@@ -7,16 +7,18 @@ import com.nopalsoft.invaders.MainInvaders;
 
 public class HtmlLauncher extends GwtApplication {
 
-        @Override
-        public GwtApplicationConfiguration getConfig () {
-                // Resizable application, uses available space in browser
-                return new GwtApplicationConfiguration(true);
-                // Fixed size application:
-                //return new GwtApplicationConfiguration(480, 320);
-        }
+    @Override
+    public GwtApplicationConfiguration getConfig() {
+        // 480 x 800 = 3:5 aspect ratio.
+        // width = 3 / 5 * height; <<-- To calculate the width and keep aspect ratio given height
+        int height = com.google.gwt.user.client.Window.getClientHeight();
+        int width = (int) (0.6 * height);
 
-        @Override
-        public ApplicationListener createApplicationListener () {
-                return new MainInvaders();
-        }
+        return new GwtApplicationConfiguration(width, height);
+    }
+
+    @Override
+    public ApplicationListener createApplicationListener() {
+        return new MainInvaders();
+    }
 }

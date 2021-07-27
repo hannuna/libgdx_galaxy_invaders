@@ -54,15 +54,14 @@ public class WorldRenderer {
         batch.begin();
         renderNave();
         renderAliens();
-        renderBalaNormalYBalaNiveles();
-        renderBalaAliens();
+        renderShipBullet();
+        renderAlienBullet();
         renderMissil();
         renderBoost();
         batch.end();
         if (Settings.drawDebugLines) {
-            renderFigurasBounds();
+            renderDebugBounds();
         }
-
     }
 
     private void renderNave() {
@@ -82,7 +81,7 @@ public class WorldRenderer {
 
         /* Dibuja el escudo de la nave */
         if (oWorld.oNave.vidasEscudo > 0) {
-            batch.draw(Assets.shield.getKeyFrame(oWorld.oNave.shieldStateTime, true), oWorld.oNave.position.x - 5.5f,
+            batch.draw(Assets.shield.getKeyFrame(oWorld.oNave.stateTime, true), oWorld.oNave.position.x - 5.5f,
                     oWorld.oNave.position.y - 5.5f, 11, 11);
         }
 
@@ -112,17 +111,17 @@ public class WorldRenderer {
 
     }
 
-    private void renderBalaNormalYBalaNiveles() {
-        for (int i = 0; i < oWorld.arrBullets.size; i++) {
-            Bullet bullet = oWorld.arrBullets.get(i);
+    private void renderShipBullet() {
+        for (int i = 0; i < oWorld.shipBullets.size; i++) {
+            Bullet bullet = oWorld.shipBullets.get(i);
 
-            if (bullet.lives <= 1) {
+            if (bullet.level <= 1) {
                 batch.draw(Assets.balaNormal, bullet.position.x - 0.15f, bullet.position.y - 0.45f, 0.3f, 0.9f);
-            } else if (bullet.lives == 2) {
+            } else if (bullet.level == 2) {
                 batch.draw(Assets.balaNivel1, bullet.position.x - 1.05f, bullet.position.y - 0.75f, 2.1f, 1.5f);
-            } else if (bullet.lives == 3) {
+            } else if (bullet.level == 3) {
                 batch.draw(Assets.balaNivel2, bullet.position.x - 1.05f, bullet.position.y - 0.75f, 2.1f, 1.5f);
-            } else if (bullet.lives == 4) {
+            } else if (bullet.level == 4) {
                 batch.draw(Assets.balaNivel3, bullet.position.x - 1.05f, bullet.position.y - 0.75f, 2.1f, 1.5f);
             } else {
                 batch.draw(Assets.balaNivel4, bullet.position.x - 1.05f, bullet.position.y - 0.75f, 2.1f, 1.5f);
@@ -132,10 +131,10 @@ public class WorldRenderer {
     }
 
 
-    private void renderBalaAliens() {
-        int len = oWorld.balasAlien.size;
+    private void renderAlienBullet() {
+        int len = oWorld.alienBullets.size;
         for (int i = 0; i < len; i++) {
-            AlienBullet oAlienBullet = oWorld.balasAlien.get(i);
+            Bullet oAlienBullet = oWorld.alienBullets.get(i);
             batch.draw(Assets.balaNormalEnemigo, oAlienBullet.position.x - 0.15f, oAlienBullet.position.y - 0.45f, 0.3f,
                     0.9f);
         }
@@ -174,7 +173,7 @@ public class WorldRenderer {
             Boost oBoost = oWorld.boosts.get(i);
             TextureRegion keyFrame;
 
-            switch (oBoost.tipo) {
+            switch (oBoost.type) {
                 case Boost.VIDA_EXTRA:
                     keyFrame = Assets.upgLife;
 
@@ -195,9 +194,9 @@ public class WorldRenderer {
         }
     }
 
-    private void renderFigurasBounds() {
+    private void renderDebugBounds() {
         ShapeRenderer render = new ShapeRenderer();
-        render.setProjectionMatrix(cam.combined);// testing propuses
+        render.setProjectionMatrix(cam.combined);
         render.begin(ShapeType.Line);
 
         Rectangle naveBounds = oWorld.oNave.boundsRectangle;

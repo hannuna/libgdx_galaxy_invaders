@@ -89,8 +89,8 @@ public class LeaderboardScreen extends Screens {
     }
 
     @Override
-    public boolean keyDown(int tecleada) {
-        if (tecleada == Keys.BACK || tecleada == Keys.ESCAPE) {
+    public boolean keyDown(int keyPressed) {
+        if (keyPressed == Keys.BACK || keyPressed == Keys.ESCAPE) {
             Assets.playSound(Assets.clickSound);
             game.setScreen(new MainMenuScreen(game));
             return true;

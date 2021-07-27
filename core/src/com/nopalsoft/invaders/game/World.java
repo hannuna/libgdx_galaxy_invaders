@@ -19,44 +19,37 @@ public class World {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_GAME_OVER = 1;
     public static final int STATE_PAUSED = 2;
+    int state;
+
     Nave oNave;
-    Array<AlienShip> alienShips;
-    Array<AlienBullet> balasAlien;
-    Array<Boost> boosts;
-    Array<Bullet> arrBullets;
-    Array<Missile> missiles;
+    Array<Boost> boosts = new Array<>();
+    Array<Missile> missiles = new Array<>();
+    Array<Bullet> shipBullets = new Array<>();
+    Array<Bullet> alienBullets = new Array<>();
+    Array<AlienShip> alienShips = new Array<>();
 
     Random oRan;
-    int missilesDisponibles;
-    int puntuacion;
-    int nivel;// el nivel del juego, cada vez que se termina una ronda se aumenta un nivel
-    int state;
+    int score;
+    int currentLevel = 0;
+    int missileCount = 5;
+
     int extraChanceDrop;
+
     int maxMissilesRonda, maxBalasRonda;
     int nivelBala;// Es el nivel en que se encuentra la bala actual cada vez que se agarra un boost aumenta
-    float tiempoCargando;
     float probs;// Esta variable ira aumentando cada nivel para dar mas dificultad al juego
     float aumentoVel;
-    float menosTiempoCargando;
 
     public World() {
         oNave = new Nave(WIDTH / 2f, 9.5f);
-        alienShips = new Array<AlienShip>();
-        balasAlien = new Array<AlienBullet>();
-        boosts = new Array<Boost>();
-        arrBullets = new Array<Bullet>();
-        missiles = new Array<Missile>();
 
-        missilesDisponibles = 5;
         oNave.vidas = 5;
         extraChanceDrop = 5;
         maxMissilesRonda = 5;
         maxBalasRonda = 5;
 
-        puntuacion = 0;
-        nivel = 0;
-        tiempoCargando = 0;
-        menosTiempoCargando = 0;
+        score = 0;
+        currentLevel = 0;
         probs = aumentoVel = 0;
         oRan = new Random((long) Gdx.app.getGraphics().getDeltaTime() * 10000);
         state = STATE_RUNNING;
@@ -64,10 +57,10 @@ public class World {
     }
 
     private void agregarAliens() {
-        nivel++;
+        currentLevel++;
 
         // Cada 2 niveles aumento los missiles que se pueden disparar
-        if (nivel % 2f == 0) {
+        if (currentLevel % 2f == 0) {
             maxMissilesRonda++;
             maxBalasRonda++;
         }
@@ -76,7 +69,7 @@ public class World {
         int vida = 1;
 
         boolean vidaAlterable = false;
-        if (nivel > 2) {
+        if (currentLevel > 2) {
             vidaAlterable = true;
             probs += 0.2f;
             aumentoVel += .02f;
@@ -131,7 +124,7 @@ public class World {
             if (oRan.nextInt(5000) < (1 + probs) && oAlienShip.state != AlienShip.EXPLOTING) {
                 float x = oAlienShip.position.x;
                 float y = oAlienShip.position.y;
-                balasAlien.add(new AlienBullet(x, y));
+                alienBullets.add(new Bullet(x, y));
             }
 
             /* Elimino si ya explotaron */
@@ -151,13 +144,13 @@ public class World {
     private void updateBalaAlien(float deltaTime) {
         /* Ahora Actualizo //Recalculo len por si se disparo una bala nueva */
 
-        Iterator<AlienBullet> it = balasAlien.iterator();
+        Iterator<Bullet> it = alienBullets.iterator();
         while (it.hasNext()) {
-            AlienBullet oAlienBullet = it.next();
+            Bullet oAlienBullet = it.next();
             if (oAlienBullet.position.y < -2)
-                oAlienBullet.hitTarget();// para que no llegue tan lejos el misil
+                oAlienBullet.destruirBala();
             oAlienBullet.update(deltaTime);
-            if (oAlienBullet.state == AlienBullet.STATE_EXPLOTANDO) {
+            if (oAlienBullet.state == Bullet.STATE_EXPLOTANDO) {
                 it.remove();
             }
 
@@ -169,11 +162,11 @@ public class World {
         float x = oNave.position.x;
         float y = oNave.position.y + 1;
 
-        if (seDisparo && arrBullets.size < maxBalasRonda) {
-            arrBullets.add(new Bullet(x, y, nivelBala));
+        if (seDisparo && shipBullets.size < maxBalasRonda) {
+            shipBullets.add(new Bullet(x, y, nivelBala));
         }
 
-        Iterator<Bullet> it1 = arrBullets.iterator();
+        Iterator<Bullet> it1 = shipBullets.iterator();
         while (it1.hasNext()) {
             Bullet oBullet = it1.next();
             if (oBullet.position.y > HEIGHT + 2)
@@ -188,11 +181,11 @@ public class World {
     private void updateMissil(float deltaTime, boolean seDisparoMissil) {
         /* Limite de maxMissilesRonda Missiles en una ronda */
         int len = missiles.size;
-        if (seDisparoMissil && missilesDisponibles > 0 && len < maxMissilesRonda) {
+        if (seDisparoMissil && missileCount > 0 && len < maxMissilesRonda) {
             float x = oNave.position.x;
             float y = oNave.position.y + 1;
             missiles.add(new Missile(x, y));
-            missilesDisponibles--;
+            missileCount--;
             Assets.playSound(Assets.missilFire, 0.15f);
         }
 
@@ -203,7 +196,6 @@ public class World {
             if (oMissile.position.y > HEIGHT + 2 && oMissile.state != Missile.STATE_EXPLOTANDO)
                 oMissile.hitTarget();
             oMissile.update(deltaTime);
-            // oMissil.updatePerseguidor(deltaTime,alienShips);
             if (oMissile.state == Missile.STATE_EXPLOTANDO && oMissile.stateTime > Missile.TIEMPO_EXPLODE) {
                 it.remove();
 
@@ -235,33 +227,22 @@ public class World {
     }
 
     private void checkColisionNaveBalaAliens() {
-
-        Iterator<AlienBullet> it = balasAlien.iterator();
-        while (it.hasNext()) {
-            AlienBullet oAlienBullet = it.next();
+        for (Bullet oAlienBullet : alienBullets) {
             if (Intersector.overlaps(oNave.boundsRectangle, oAlienBullet.boundsRectangle) && oNave.state != Nave.NAVE_STATE_EXPLODE && oNave.state != Nave.NAVE_STATE_BEING_HIT) {
                 oNave.beingHit();
-                oAlienBullet.hitTarget();
-                Gdx.app.log("Choco", "Si choco");
+                oAlienBullet.hitTarget(1);
             }
-
         }
     }
 
     private void checkColisionAliensBala() {
-
-        // Bala nivel 1
-        Iterator<Bullet> it1 = arrBullets.iterator();
-        while (it1.hasNext()) {
-            Bullet oBala = it1.next();
-            Iterator<AlienShip> it2 = alienShips.iterator();
-            while (it2.hasNext()) {
-                AlienShip oAlien = it2.next();
+        for (Bullet oBala : shipBullets) {
+            for (AlienShip oAlien : alienShips) {
                 if (Intersector.overlaps(oAlien.boundsCircle, oBala.boundsRectangle) && (oAlien.state != AlienShip.EXPLOTING)) {
                     oBala.hitTarget(oAlien.vidasLeft);
                     oAlien.beingHit();
                     if (oAlien.state == AlienShip.EXPLOTING) {// Solo aumenta la puntuacion y agrego boost si ya esta exlotando, no si disminuyo su vida
-                        puntuacion += oAlien.puntuacion;// Actualizo la puntuacion
+                        score += oAlien.puntuacion;// Actualizo la puntuacion
                         agregarBoost(oAlien.position.x, oAlien.position.y);/* Aqui voy a ver si me da algun boost o no */
                         Assets.playSound(Assets.explosionSound, 0.6f);
                     }
@@ -272,18 +253,13 @@ public class World {
     }
 
     private void checkColisionAlienMissil() {
-        Iterator<Missile> it = missiles.iterator();
-        while (it.hasNext()) {
-            Missile oMissile = it.next();
-
-            Iterator<AlienShip> it2 = alienShips.iterator();
-            while (it2.hasNext()) {
-                AlienShip oAlien = it2.next();
+        for (Missile oMissile : missiles) {
+            for (AlienShip oAlien : alienShips) {
                 if (oMissile.state == Missile.STATE_DISPARADO && Intersector.overlaps(oAlien.boundsCircle, oMissile.boundsRectangle) && oAlien.state != AlienShip.EXPLOTING) {
                     oMissile.hitTarget();
                     oAlien.beingHit();
                     if (oAlien.state == AlienShip.EXPLOTING) {// Solo aumenta la puntuacion y agrego boost si ya esta exlotando, no si disminuyo su vida
-                        puntuacion += oAlien.puntuacion;// Actualizo la puntuacion
+                        score += oAlien.puntuacion;// Actualizo la puntuacion
                         agregarBoost(oAlien.position.x, oAlien.position.y);/* Aqui voy a ver si me da algun boost o no */
                         Assets.playSound(Assets.explosionSound, 0.6f);
                     }
@@ -292,7 +268,7 @@ public class World {
                 if (oMissile.state == Missile.STATE_EXPLOTANDO && Intersector.overlaps(oAlien.boundsCircle, oMissile.boundsCircle) && oAlien.state != AlienShip.EXPLOTING) {
                     oAlien.beingHit();
                     if (oAlien.state == AlienShip.EXPLOTING) {// Solo aumenta la puntuacion y agrego boost si ya esta exlotando, no si disminuyo su vida
-                        puntuacion += oAlien.puntuacion;// Actualizo la puntuacion
+                        score += oAlien.puntuacion;// Actualizo la puntuacion
                         agregarBoost(oAlien.position.x, oAlien.position.y);/* Aqui voy a ver si me da algun boost o no */
                         Assets.playSound(Assets.explosionSound, 0.6f);
                     }
@@ -307,23 +283,20 @@ public class World {
         while (it.hasNext()) {
             Boost oBoost = it.next();
             if (Intersector.overlaps(oBoost.boundsCircle, oNave.boundsRectangle) && oNave.state != Nave.NAVE_STATE_EXPLODE) {
-                switch (oBoost.tipo) {
+                switch (oBoost.type) {
                     case Boost.VIDA_EXTRA:
                         oNave.hitVidaExtra();
                         break;
-                    case Boost.UPGRADE_NIVEL_ARMAS: // MENOS_TIEMPO_CARGANDO: <-- Antes se llamaba asi
-                        // menosTiempoCargando+=.055; <-- antes hacia esta accion
-                        // TODO Tengo que revisar el que el menosTimpoCargando no supere los .5 porke si no se va a disparar como loco
+                    case Boost.UPGRADE_NIVEL_ARMAS:
                         nivelBala++;
                         break;
                     case Boost.MISSIL_EXTRA:
-                        missilesDisponibles++;
+                        missileCount++;
                         break;
                     default:
                     case Boost.SHIELD:
                         oNave.hitEscudo();
                         break;
-
                 }
                 it.remove();
                 Assets.playSound(Assets.coinSound);
@@ -367,8 +340,8 @@ public class World {
 
     private void checkLevelEnd() {
         if (alienShips.size == 0) {
-            arrBullets.clear();
-            balasAlien.clear();
+            shipBullets.clear();
+            alienBullets.clear();
             agregarAliens();
         }
 

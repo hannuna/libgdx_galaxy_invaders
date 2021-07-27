@@ -3,22 +3,21 @@ package com.nopalsoft.invaders.frame;
 public class Boost extends DynamicGameObject {
 
 	public static final float DRAW_SIZE = 5;
-	public static final float RADIO = 1f;
-	public static final float VELOCIDAD = -10f;
+	public static final float RADIUS = 1f;
+	public static final float SPEED = -10f;
 
 	public static final int VIDA_EXTRA = 0;
 	public static final int UPGRADE_NIVEL_ARMAS = 1;
 	public static final int MISSIL_EXTRA = 2;
 	public static final int SHIELD = 3;
-	public final int tipo;
+	public final int type;
 	int stateTime;
 
-	public Boost(int tipo, float x, float y) {
-		super(x, y, RADIO);
-		this.tipo = tipo;
-		velocity.add(0, VELOCIDAD);
+	public Boost(int type, float x, float y) {
+		super(x, y, RADIUS);
+		this.type = type;
+		velocity.add(0, SPEED);
 		stateTime = 0;
-
 	}
 
 	public void update(float deltaTime) {

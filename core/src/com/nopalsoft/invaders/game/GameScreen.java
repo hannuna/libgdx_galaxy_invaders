@@ -61,7 +61,7 @@ public class GameScreen extends Screens {
         super(game);
         Settings.numeroDeVecesQueSeHaJugado++;
         state = GAME_READY;
-        if (Settings.numeroDeVecesQueSeHaJugado < 1000) {// Se mostrara 2 veces, la vez cero y la vez 1
+        if (Settings.numeroDeVecesQueSeHaJugado < 3) {// Se mostrara 2 veces, la vez cero y la vez 1
             state = GAME_TUTORIAL;
             pantallaTutorial = 0;
             setUpTutorial();
@@ -75,7 +75,7 @@ public class GameScreen extends Screens {
 
         // Controles OnScreen
         accel = 0;
-        nivel = oWorld.nivel;
+        nivel = oWorld.currentLevel;
         btLeft = new ImageButton(Assets.btLeft);
         btLeft.setSize(65, 50);
         btLeft.setPosition(10, 5);
@@ -110,7 +110,7 @@ public class GameScreen extends Screens {
 
         });
 
-        btMissil = new TextButton(oWorld.missilesDisponibles + "", new TextButtonStyle(Assets.btMissil, Assets.btMissilDown, null, Assets.font10));
+        btMissil = new TextButton(oWorld.missileCount + "", new TextButtonStyle(Assets.btMissil, Assets.btMissilDown, null, Assets.font10));
         btMissil.getLabel().setColor(Color.GREEN);
         btMissil.setSize(60, 60);
         btMissil.setPosition(SCREEN_WIDTH - 5 - 60 - 20 - 60, 5);
@@ -194,7 +194,7 @@ public class GameScreen extends Screens {
         btShare.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                String text = Assets.idiomas.format("i_just_score_n_points_playing_droid_invaders_can_you_beat_me", oWorld.puntuacion);
+                String text = Assets.idiomas.format("i_just_score_n_points_playing_droid_invaders_can_you_beat_me", oWorld.score);
                 Gdx.app.log("Share text", text);
                 Assets.playSound(Assets.clickSound);
             }
@@ -215,7 +215,7 @@ public class GameScreen extends Screens {
         dialogGameOver.getButtonTable().add(btShare).expand();
 
 
-        if (!Settings.seCalifico && Settings.numeroDeVecesQueSeHaJugado % 5 == 0) {
+        if (Settings.numeroDeVecesQueSeHaJugado % 5 == 0) {
             game.dialogs.showDialogRate();
         }
 
@@ -227,8 +227,8 @@ public class GameScreen extends Screens {
             }
         });
 
-        lbLevel = new Label(Assets.idiomas.get("level") + " " + oWorld.nivel, Assets.styleLabel);
-        lbScore = new Label(Assets.idiomas.get("score") + " " + oWorld.puntuacion, Assets.styleLabel);
+        lbLevel = new Label(Assets.idiomas.get("level") + " " + oWorld.currentLevel, Assets.styleLabel);
+        lbScore = new Label(Assets.idiomas.get("score") + " " + oWorld.score, Assets.styleLabel);
         lbNumVidas = new Label("x" + oWorld.oNave.vidas, Assets.styleLabel);
         Image imVida = new Image(Assets.nave);
 
@@ -382,12 +382,12 @@ public class GameScreen extends Screens {
             oWorld.update(deltaTime, accel, seDisparo, seDisparoMissil);
         }
 
-        if (nivel != oWorld.nivel) {
-            nivel = oWorld.nivel;
+        if (nivel != oWorld.currentLevel) {
+            nivel = oWorld.currentLevel;
             lbLevel.setText(Assets.idiomas.get("level") + " " + nivel);
         }
 
-        lbScore.setText(Assets.idiomas.get("score") + " " + oWorld.puntuacion);
+        lbScore.setText(Assets.idiomas.get("score") + " " + oWorld.score);
         lbNumVidas.setText("x" + oWorld.oNave.vidas);
 
         if (oWorld.state == World.STATE_GAME_OVER) {
@@ -395,7 +395,7 @@ public class GameScreen extends Screens {
             dialogGameOver.show(stage);
         }
 
-        btMissil.setText(oWorld.missilesDisponibles + "");
+        btMissil.setText(oWorld.missileCount + "");
 
         seDisparo = false;
         seDisparoMissil = false;
@@ -459,15 +459,15 @@ public class GameScreen extends Screens {
     }
 
     private void presentRunning() {
-        if (oWorld.missilesDisponibles > 0 && Settings.isTiltControl) {
+        if (oWorld.missileCount > 0 && Settings.isTiltControl) {
             batcher.draw(Assets.misil.getKeyFrame(0), 1, 1, 8, 28);
-            Assets.font15.draw(batcher, "X" + oWorld.missilesDisponibles, 10, 25);
+            Assets.font15.draw(batcher, "X" + oWorld.missileCount, 10, 25);
         }
     }
 
     @Override
     public void hide() {
-        Settings.agregarPuntuacion(oWorld.puntuacion);
+        Settings.agregarPuntuacion(oWorld.score);
         super.hide();
     }
 

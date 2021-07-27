@@ -160,7 +160,7 @@ public class MainMenuScreen extends Screens {
 
     @Override
     public void update(float delta) {
-        lbHighestScore.setText(Assets.idiomas.format("local_highest_score", Settings.highScores[0]));
+        lbHighestScore.setText(Assets.idiomas.format("local_highest_score", String.valueOf(Settings.highScores[0])));
     }
 
     @Override
